@@ -1,6 +1,8 @@
 import sqlite3 as sql
-from PyQt5.QtWidgets import QMainWindow, QApplication, QTableWidgetItem
-from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import QMainWindow, QApplication, QTableWidgetItem, QAction
+from interface import Ui_MainWindow
+from addeditform_program import AskWidget
+from PyQt5 import QtWidgets
 import sys
 
 
@@ -15,7 +17,10 @@ class Database:
         con = sql.connect(self.name)
         cur = con.cursor()
 
-        result = cur.execute(sql_request).fetchall()
+        if 'UPDATE' in sql_request or 'INSERT' in sql_request:
+            result = cur.execute(sql_request)
+        else:
+            result = cur.execute(sql_request).fetchall()
 
         con.close()
 
@@ -37,39 +42,6 @@ class Database:
             return f'Database(name_of_database=\'{self.name}\')'
 
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.centralwidget)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.verticalLayout = QtWidgets.QVBoxLayout()
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.table = QtWidgets.QTableWidget(self.centralwidget)
-        self.table.setObjectName("table")
-        self.table.setColumnCount(0)
-        self.table.setRowCount(0)
-        self.verticalLayout.addWidget(self.table)
-        self.horizontalLayout.addLayout(self.verticalLayout)
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 21))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-
-
 class Program(QMainWindow, Ui_MainWindow):
     def __init__(self, name_of_database):
         super().__init__()
@@ -78,6 +50,7 @@ class Program(QMainWindow, Ui_MainWindow):
         self.setWindowTitle('Coffees')
         self.database = Database(name_of_database)
         self.create_table()
+        self.create_menubar()
 
     def create_table(self):
         all_coffees = self.database.return_all_values('coffee_types')
@@ -97,6 +70,21 @@ class Program(QMainWindow, Ui_MainWindow):
         self.table.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(5, QtWidgets.QHeaderView.Fixed)
         self.table.horizontalHeader().setSectionResizeMode(6, QtWidgets.QHeaderView.Fixed)
+
+    def create_menubar(self):
+        self.menu_bar = self.menuBar()
+
+        fileMenu = self.menu_bar.addMenu('&File')
+
+        new_action = QAction('Update data in table', self)
+        new_action.triggered.connect(self.update_the_base)
+        fileMenu.addAction(new_action)
+
+    def update_the_base(self):
+        self.widg = AskWidget(self.database, self.table.rowCount(), self)
+        self.widg.show()
+
+        # self.create_table()
 
 
 if __name__ == '__main__':
