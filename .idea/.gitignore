@@ -4,3 +4,4 @@
 
 # Pychache
 __pycache__/
+*.pyc
